@@ -1,0 +1,2 @@
+SELECT * FROM WEB.WEB_EXTENDED WHERE WEB.WEB_EXTENDED.Measure = 'tj' AND 
+(WEB.WEB_EXTENDED.Product = 'Natural gas' OR WEB.WEB_EXTENDED.Product = 'Natural gas liquids' OR WEB.WEB_EXTENDED.Product = 'Refinery gas' OR WEB.WEB_EXTENDED.Product = 'Ethane');

@@ -1,0 +1,480 @@
+
+R version 3.6.0 (2019-04-26) -- "Planting of a Tree"
+Copyright (C) 2019 The R Foundation for Statistical Computing
+Platform: x86_64-redhat-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ###################################
+> # Create final demand (FD) matrix #
+> ###################################
+> rm(list = ls())
+> 
+> wd <- "~/global_energy"
+> setwd(wd)
+> source(paste0(wd, "/derived/0_globals.R"))
+> 
+> raw <- "/data/jus3/GlobalIO/raw"
+> raw.eora <-  paste0("/data/jus3/GlobalIO/raw/EORA/", eora.version)
+> input <- "/data/jus3/GlobalIO/output/derived"
+> output <- "/data/jus3/GlobalIO/output/derived/FD_MAT"
+> figures <- "/data/jus3/GlobalIO/output/figures"
+> temp <- tempdir()
+> 
+> library('magrittr')
+> library('dplyr')
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> library('RMariaDB')
+> library('hiofunctions')
+> 
+> # Import files #
+> ################
+> web.countries <- read.csv(file.path(raw, "ConversionTables/web_countries.csv"), stringsAsFactors = F, strip.white = T)
+> energy.shares <- read.csv(file.path(input, "energy_production_shares.csv"), stringsAsFactors = F)
+> 
+> # Import WEB for residential use
+> print("Bring in WEB data from SQL")
+[1] "Bring in WEB data from SQL"
+> 
+> sql_import(statement = paste0('SELECT * FROM WEB.WEB_EXTENDED WHERE ',
++                               'WEB.WEB_EXTENDED.Measure = "tj" AND ',
++                               'WEB.WEB_EXTENDED.Flow = "Residential"'),
++            outname = 'web')
+Warning message:
+In connection_release(conn@ptr) : There is a result object still in use.
+The connection will be automatically released when it is closed
+> 
+> web <- unique(web[c('Country', 'Product', 'Time', 'Value')])
+> names(web) <- c('country', 'energy', 'year', 'value')
+> 
+> web$value <- as.numeric(web$value)
+> 
+> # Aggregate energy resources #
+> ##############################
+> web$energy.type <- NA
+> for (e in primary.energy) {
++   assign('list', get(paste0('web.list.', e)))
++   web$energy.type[web$energy %in% list] <- e
++ }
+> web$energy.type[web$energy == 'Electricity'] <- 'ELEC'
+> 
+> web <- dplyr::group_by(web, country, year, energy.type) %>%
++        dplyr::summarise(value = sum(value, na.rm = T))
+> 
+> web <- subset(web, year >= year.min & year <= year.max)
+> web <- subset(web, !is.na(energy.type))
+> 
+> # Link to ISO names
+> web <- inner_join(web, web.countries[c('web.country', 'iso.country')], by = c('country' = 'web.country'))
+> 
+> # Disaggregate electricity based on electricity generation share
+> web.elec <- subset(web, energy.type == 'ELEC')
+> elec.shares <- energy.shares[c('country', 'iso.country', 'year', 'share.elec.RE', 'share.elec.NU', 'share.elec.HY', 'share.elec.COM')]
+> isid('elec.shares', c('country', 'year'))
+[1] "Dataframe elec.shares is uniquely ID'd by:"
+[1] "     country year"
+> 
+> web.elec <- left_join(web.elec, elec.shares, by = c('country', 'iso.country', 'year'))
+> 
+> web <- subset(web, energy.type != 'ELEC') # Remove electricity from base df
+> for (c in c('RE', 'NU', 'HY', 'COM')) {
++   df <- web.elec
++   names(df)[names(df) == paste0('share.elec.', c)] <- 'share'
++   df$value <- df$value * df$share
++   df <- df[c('country', 'year', 'energy.type', 'value', 'iso.country')]
++   df$energy.type <- paste0('ELEC_', c)
++   web <- rbind(web, df)
++ }
+> 
+> # Function: Import FD #
+> #######################
+> import_FD <- function(year) {
++   print(paste0('Imporing Eora: YEAR = ', year))
++   import_eora(year = year)
++ 
++   print('Import matrix FD (final demand)')
++   assign('FD', read.delim(file.path(raw.eora, paste0(year, '/Eora26_', year, '_bp_FD.txt')), header = F, stringsAsFactors = F))
++   FD <- as.matrix(FD)
++ 
++   assign('FD.labs', read.delim(file.path(raw.eora, paste0(year, '/labels_FD.txt')), header = F, stringsAsFactors = F))
++     names(FD.labs) <- c('country', 'country.code', 'demand', 'sector')
++     FD.labs <- FD.labs[c('country', 'country.code', 'demand', 'sector')]
++     FD.labs$sector.name <- stringr::str_replace_all(substr(FD.labs$sector, nchar(FD.labs$sector) - 3, nchar(FD.labs$sector)), "\\.", "_")
++     FD.labs$names <- paste0(FD.labs$country.code, '.', FD.labs$sector.name)
++ 
++   environment(assert) <- environment()
++   assert('nrow(FD) == nrow(eora.T.labs)')
++   assert('ncol(FD) == nrow(FD.labs)')
++ 
++   rownames(FD) <- eora.T.labs$names
++   colnames(FD) <- FD.labs$names
++ 
++   assign('FD', FD, envir = parent.frame())
++   assign('country.list', country.list, envir = parent.frame())
++ }
+> 
+> # Insert physical units
+> #######################
+> for (y in year.min:year.max) {
++   print("##################################")
++   print(paste0("Compiling matrix FD, YEAR = ", y))
++   print("##################################")
++ 
++   import_FD(year = y)
++   FD <- FD[substr(rownames(FD), 1, 3) %in% country.list, ]
++ 
++   # Row names for each submatrix
++   matrix_country_list <- unique(substr(rownames(FD), 1, 3))
++   rnames <- list()
++   for (c in matrix_country_list) {
++     rlist <- list()
++     for (e in energy.names) {rlist <- c(rlist, paste0(c, '.', e))}
++     for (i in 1:26) {rlist <- c(rlist, paste0(c, '.', i))}
++     rnames <- c(rnames, rlist)
++   }
++ 
++   # Build matrix by country submatrix
++   all.mat <- matrix(NA, nrow = ((26 + length(energy.names)) * length(country.list)), ncol = 0)
++ 
++   for (c in country.list) {
++     mat <- matrix(0, nrow = ((26 + length(energy.names)) * length(country.list)), ncol = 6)
++     colnames(mat) <- colnames(FD)[grepl(c, colnames(FD))]
++     rownames(mat) <- rnames
++ 
++     web.df <- subset(web, iso.country == c & year == y)
++     for (e in unique(web.df$energy.type)) {
++       inv <- web.df$value[web.df$iso.country == c & web.df$energy.type == e]
++       quiet(assert('length(inv) == 1'))
++       mat[paste0(c, '.', e), paste0(c, '.P_3h')] <- inv
++     }
++ 
++     mat[rownames(mat) %in% rownames(FD), colnames(mat) %in% colnames(FD)] <-
++       FD[rownames(FD) %in% rownames(mat), colnames(FD) %in% colnames(mat)]
++ 
++     all.mat <- cbind(all.mat, mat)
++   }
++ 
++   saveRDS(all.mat, file.path(output, paste0('fd_mat_', y, '.rds')))
++ }
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 1995"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 1995"
+[1] "Importing Eora T matrix, YEAR = 1995"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 1996"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 1996"
+[1] "Importing Eora T matrix, YEAR = 1996"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 1997"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 1997"
+[1] "Importing Eora T matrix, YEAR = 1997"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 1998"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 1998"
+[1] "Importing Eora T matrix, YEAR = 1998"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 1999"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 1999"
+[1] "Importing Eora T matrix, YEAR = 1999"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2000"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2000"
+[1] "Importing Eora T matrix, YEAR = 2000"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2001"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2001"
+[1] "Importing Eora T matrix, YEAR = 2001"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2002"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2002"
+[1] "Importing Eora T matrix, YEAR = 2002"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2003"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2003"
+[1] "Importing Eora T matrix, YEAR = 2003"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2004"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2004"
+[1] "Importing Eora T matrix, YEAR = 2004"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2005"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2005"
+[1] "Importing Eora T matrix, YEAR = 2005"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2006"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2006"
+[1] "Importing Eora T matrix, YEAR = 2006"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2007"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2007"
+[1] "Importing Eora T matrix, YEAR = 2007"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2008"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2008"
+[1] "Importing Eora T matrix, YEAR = 2008"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2009"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2009"
+[1] "Importing Eora T matrix, YEAR = 2009"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2010"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2010"
+[1] "Importing Eora T matrix, YEAR = 2010"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2011"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2011"
+[1] "Importing Eora T matrix, YEAR = 2011"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2012"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2012"
+[1] "Importing Eora T matrix, YEAR = 2012"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2013"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2013"
+[1] "Importing Eora T matrix, YEAR = 2013"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2014"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2014"
+[1] "Importing Eora T matrix, YEAR = 2014"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "##################################"
+[1] "Compiling matrix FD, YEAR = 2015"
+[1] "##################################"
+[1] "Imporing Eora: YEAR = 2015"
+[1] "Importing Eora T matrix, YEAR = 2015"
+[1] "Importing Eora T labels"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+[1] "Import matrix FD (final demand)"
+[1] "Assertion TRUE"
+[1] "Assertion TRUE"
+> 
+> 
+> 
+> proc.time()
+   user  system elapsed 
+429.874   5.845 561.543 

@@ -1,0 +1,12 @@
+SELECT * FROM WEB.WEB_EXTENDED WHERE WEB.WEB_EXTENDED.Measure = "tj"
+AND (WEB.WEB_EXTENDED.Product = 'BKB' OR
+     WEB.WEB_EXTENDED.Product = 'Peat' OR
+     WEB.WEB_EXTENDED.Product = 'Peat products' OR
+     WEB.WEB_EXTENDED.Product = 'Primary solid biofuels' OR
+     WEB.WEB_EXTENDED.Product = 'Biogases' OR
+     WEB.WEB_EXTENDED.Product = 'Biogasoline' OR
+     WEB.WEB_EXTENDED.Product = 'Biodiesels' OR
+     WEB.WEB_EXTENDED.Product = 'Bio jet kerosene' OR
+     WEB.WEB_EXTENDED.Product = 'Other liquid biofuels' OR
+     WEB.WEB_EXTENDED.Product = 'Non-specified primary biofuels and waste' OR
+     WEB.WEB_EXTENDED.Product = 'Charcoal');

@@ -1,0 +1,72 @@
+
+R version 3.5.2 (2018-12-20) -- "Eggshell Igloo"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-redhat-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ###################
+> # Run all scripts #
+> ###################
+> rm(list = ls())
+> 
+> wd <- "~/global_energy"
+> setwd(wd)
+> source(paste0(wd, "/functions.R"))
+> source(paste0(wd, "/derived/0_globals.R"))
+> 
+> wwd <- paste0(wd, '/derived/c_scale_trade/')
+> sink(paste0(wwd, 'out/Make.txt'))
+> 
+> raw <- "/data/jus3/GlobalIO/raw"
+> input <- "/data/jus3/GlobalIO/output/derived"
+> output <- "/data/jus3/GlobalIO/output/derived"
+> figures <- "/data/jus3/GlobalIO/output/figures"
+> temp <- tempdir()
+> 
+> library('magrittr')
+> library('dplyr')
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> library('RMariaDB')
+> library('ggplot2')
+> library('stringr')
+> 
+> # Run files
+> source(paste0(wwd, '1_import_BACI.R'))
+Warning message:
+In (function(x, i, exact) if (is.matrix(i)) as.matrix(x)[[i]] else .subset2(x,  :
+  call dbDisconnect() when finished working with a connection
+> source(paste0(wwd, '2_elec_importprice.R'))
+Warning message:
+call dbDisconnect() when finished working with a connection 
+> source(paste0(wwd, '3_elec_convert.R'))
+> source(paste0(wwd, '4_primary_to_none.R'))
+> source(paste0(wwd, '5_none_to_energy.R'))
+> 
+> sink()
+> 
+> proc.time()
+   user  system elapsed 
+500.447  47.263 766.849 

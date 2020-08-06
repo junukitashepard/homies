@@ -1,0 +1,2 @@
+SELECT * FROM WEB.WEB_EXTENDED WHERE WEB.WEB_EXTENDED.Measure = 'tj' AND 
+(WEB.WEB_EXTENDED.Product = 'Solar photovoltaics' OR WEB.WEB_EXTENDED.Product = 'Solar thermal' OR WEB.WEB_EXTENDED.Product = 'Wind' OR WEB.WEB_EXTENDED.Product = 'Geothermal');

@@ -1,0 +1,111 @@
+[1] "Bring in WEB data from SQL"
+[1] "Executing SQL: SELECT * FROM WEB.WEB_EXTENDED WHERE WEB.WEB_EXTENDED.Product = \"Electricity\" AND WEB.WEB_EXTENDED.Measure = \"tj\""
+
+                                              Agriculture/forestry                                  Autoproducer CHP plants (transf.) 
+                                                                58                                                                 58 
+                         Autoproducer electricity plants (transf.)                                 Autoproducer heat plants (transf.) 
+                                                                58                                                                 58 
+                                BKB/peat briquette plants (energy)                                BKB/peat briquette plants (transf.) 
+                                                                58                                                                 58 
+                                           Blast furnaces (energy)                                           Blast furnaces (transf.) 
+                                                                58                                                                 58 
+                               Charcoal production plants (energy)                               Charcoal production plants (transf.) 
+                                                                58                                                                 58 
+                                        Chemical and petrochemical                 Chemical heat for electricity production (transf.) 
+                                                                58                                                                 58 
+                                 Coal liquefaction plants (energy)                                 Coal liquefaction plants (transf.) 
+                                                                58                                                                 58 
+                                               Coal mines (energy)                                                Coke ovens (energy) 
+                                                                58                                                                 58 
+                                              Coke ovens (transf.)                                     Commercial and public services 
+                                                                58                                                                 58 
+                                                      Construction                                                  Domestic aviation 
+                                                                58                                                                 58 
+                                               Domestic navigation                                         Electric boilers (transf.) 
+                                                                58                                                                 58 
+                                          Electricity output (GWh)                   Electricity output (GWh)-autoproducer CHP plants 
+                                                                58                                                                 58 
+          Electricity output (GWh)-autoproducer electricity plants         Electricity output (GWh)-main activity producer CHP plants 
+                                                                58                                                                 58 
+Electricity output (GWh)-main activity producer electricity plants                                            Energy industry own use 
+                                                                58                                                                 58 
+                                                           Exports                                                            Fishing 
+                                                                58                                                                 58 
+                                                  Food and tobacco                                  For blended natural gas (transf.) 
+                                                                58                                                                 58 
+                                                Gas works (energy)                                                Gas works (transf.) 
+                                                                58                                                                 58 
+                             Gas-to-liquids (GTL) plants  (energy)                              Gas-to-liquids (GTL) plants (transf.) 
+                                                                58                                                                 58 
+                         Gasification plants for biogases (energy)                                                        Heat output 
+                                                                58                                                                 58 
+                               Heat output-autoproducer CHP plants                               Heat output-autoproducer heat plants 
+                                                                58                                                                 58 
+                     Heat output-main activity producer CHP plants                     Heat output-main activity producer heat plants 
+                                                                58                                                                 58 
+                                              Heat pumps (transf.)                                                            Imports 
+                                                                58                                                                 58 
+                                                          Industry                                     International aviation bunkers 
+                                                                58                                                                 58 
+                                      International marine bunkers                                                     Iron and steel 
+                                                                58                                                                 58 
+              Liquefaction (LNG) / regasification plants  (energy)                                                             Losses 
+                                                                58                                                                 58 
+                                                         Machinery                        Main activity producer CHP plants (transf.) 
+                                                                58                                                                 58 
+               Main activity producer electricity plants (transf.)                       Main activity producer heat plants (transf.) 
+                                                                58                                                                 58 
+                    Memo: Non-energy use in chemical/petrochemical                               Memo: Non-energy use in construction 
+                                                                58                                                                 58 
+                    Memo: Non-energy use in food/beverages/tobacco                                   Memo: Non-energy use in industry 
+                                                                58                                                                 58 
+                            Memo: Non-energy use in iron and steel                                  Memo: Non-energy use in machinery 
+                                                                58                                                                 58 
+                      Memo: Non-energy use in mining and quarrying                         Memo: Non-energy use in non-ferrous metals 
+                                                                58                                                                 58 
+                     Memo: Non-energy use in non-metallic minerals                     Memo: Non-energy use in non-specified industry 
+                                                                58                                                                 58 
+                   Memo: Non-energy use in paper/pulp and printing                       Memo: Non-energy use in textiles and leather 
+                                                                58                                                                 58 
+                       Memo: Non-energy use in transport equipment                     Memo: Non-energy use in wood and wood products 
+                                                                58                                                                 58 
+                                              Mining and quarrying                                                     Non-energy use 
+                                                                58                                                                 58 
+                                           Non-energy use in other                                        Non-energy use in transport 
+                                                                58                                                                 58 
+                     Non-energy use industry/transformation/energy                                                 Non-ferrous metals 
+                                                                58                                                                 58 
+                                             Non-metallic minerals                                             Non-specified (energy) 
+                                                                58                                                                 58 
+                                          Non-specified (industry)                                              Non-specified (other) 
+                                                                58                                                                 58 
+                                    Non-specified (transformation)                                          Non-specified (transport) 
+                                                                58                                                                 58 
+                                        Nuclear industry  (energy)                                    Oil and gas extraction (energy) 
+                                                                58                                                                 58 
+                                           Oil refineries (energy)                                           Oil refineries (transf.) 
+                                                                58                                                                 58 
+                                                             Other               Own use in electricity, CHP and heat plants (energy) 
+                                                                58                                                                 58 
+                                             Paper, pulp and print                                        Patent fuel plants (energy) 
+                                                                58                                                                 58 
+                                      Patent fuel plants (transf.)                                     Petrochemical plants (transf.) 
+                                                                58                                                                 58 
+                                                Pipeline transport                                                         Production 
+                                                                58                                                                 58 
+                                    Pumped storage plants (energy)                                                               Rail 
+                                                                58                                                                 58 
+                                                       Residential                                                               Road 
+                                                                58                                                                 58 
+                                           Statistical differences                                                      Stock changes 
+                                                                58                                                                 58 
+                                               Textile and leather                                            Total final consumption 
+                                                                58                                                                 58 
+                                       Total primary energy supply                                                          Transfers 
+                                                                58                                                                 58 
+                                          Transformation processes                                                          Transport 
+                                                                58                                                                 58 
+                                               Transport equipment                                             Wood and wood products 
+                                                                58                                                                 58 
+                                            World aviation bunkers                                               World marine bunkers 
+                                                                58                                                                 58 

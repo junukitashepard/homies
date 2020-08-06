@@ -1,0 +1,1 @@
+SELECT * FROM WEB.WEB_EXTENDED WHERE WEB.WEB_EXTENDED.Measure = 'tj' AND (WEB.WEB_EXTENDED.Product = 'Crude/NGL/feedstocks (if no detail)' OR WEB.WEB_EXTENDED.Product = 'Crude oil' OR WEB.WEB_EXTENDED.Product = 'Oil shale and oil sands' OR WEB.WEB_EXTENDED.Product = 'Refinery feedstocks');
